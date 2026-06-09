@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      # La porta di EasyProxy viene esposta da Gluetun
+      - '${PORT:-7860}:${PORT:-7860}'
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=INSERISCI_QUI_LA_TUA_CHIAVE_PRIVATA_SURFSHARK
+      - WIREGUARD_ADDRESSES=10.14.0.2/16
+      - SERVER_COUNTRIES=Italy
+    restart: unless-stopped
+
+  easyproxy:
+    image: ghcr.io/realbestia1/easyproxy:latest
+    container_name: easyproxy
+    restart: unless-stopped
+    # Condivide la rete con il container VPN
+    network_mode: "container:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - API_PASSWORD=INSERISCI_QUI_LA_TUA_PASSWORD_API
+      - PORT=7860
+      - FLARESOLVERR_TIMEOUT=30
+      - ENABLE_WARP=false
